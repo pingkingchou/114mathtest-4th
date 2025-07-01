@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>四年級數學科線上測驗 (可作答與記錄)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+        // MathJax Configuration
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; }
+        .question-group { border-left: 4px solid #e5e7eb; transition: border-color 0.3s; }
+        .correct { border-color: #22c55e; }
+        .incorrect { border-color: #ef4444; }
+        .quiz-image { max-width: 400px; margin: 1rem auto; display: block; border-radius: 0.5rem; }
+        #teacher-panel, #password-modal { display: none; } /* 預設隱藏 */
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Password Modal -->
+    <div id="password-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-sm">
+            <h3 class="text-xl font-bold mb-4">教師登入</h3>
+            <p class="text-sm text-gray-600 mb-4">請輸入密碼以查看作答紀錄。</p>
+            <input type="password" id="password-input" class="w-full p-2 border border-gray-300 rounded-lg mb-4" placeholder="請輸入密碼...">
+            <div class="flex justify-end gap-3">
+                <button id="password-cancel-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">取消</button>
+                <button id="password-submit-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">確認</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto max-w-4xl p-4 sm:p-8">
+        <header class="text-center mb-8 bg-white p-6 rounded-xl shadow-md">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">114年學力檢測測驗</h1>
+            <h2 class="text-xl sm:text-2xl font-semibold text-gray-600 mt-2">四年級數學科</h2>
+        </header>
+        
+        <div class="bg-white p-6 rounded-xl shadow-md">
+            <!-- Student Info Section -->
+            <div id="student-info" class="mb-8">
+                 <h2 class="text-xl font-bold mb-4 border-b pb-2">考生資訊</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="student-class" class="block text-sm font-medium text-gray-700 mb-1">班級</label>
+                        <input type="text" id="student-class" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="請輸入班級，例如：四年一班">
+                    </div>
+                    <div>
+                        <label for="student-name" class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                        <input type="text" id="student-name" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="請輸入姓名">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Form -->
+            <form id="quiz-form">
+                <div id="quiz-container" class="space-y-6">
+                    <!-- Questions injected by JS -->
+                </div>
+                <div class="mt-8 text-center">
+                    <button type="submit" id="submit-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                        送出測驗
+                    </button>
+                </div>
+            </form>
+
+            <!-- Results Section -->
+            <div id="results" class="hidden mt-8">
+                <h2 class="text-2xl font-bold text-center mb-4">測驗結果</h2>
+                <div id="score" class="text-4xl font-bold text-center text-blue-700 mb-2"></div>
+                <div id="summary" class="text-center text-lg mb-8"></div>
+                <div id="db-status" class="text-center text-sm text-gray-500 mb-6"></div>
+                <div class="flex justify-center items-center gap-4">
+                     <button id="download-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                        下載錯誤報告 (PDF)
+                    </button>
+                    <button id="retry-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                        再答一次
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Teacher Login Button -->
+        <div id="teacher-login-container" class="text-center mt-12 border-t pt-8">
+            <button id="teacher-login-btn" class="text-blue-600 hover:underline">教師登入</button>
+        </div>
+
+        <!-- Teacher Panel -->
+        <div id="teacher-panel" class="mt-8 bg-white p-6 rounded-xl shadow-lg">
+            <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
+                <h2 class="text-2xl font-bold">教師後台 - 四年級數學作答紀錄</h2>
+                <button id="export-csv-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+                    匯出為 Excel (CSV)
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">作答時間</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">班級</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分數</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-table-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Results will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA5yiDVFaIKOJ-UKIqEKpwftxhEQ8SSBmM",
+            authDomain: "th-chinese-1.firebaseapp.com",
+            projectId: "th-chinese-1",
+            storageBucket: "th-chinese-1.appspot.com",
+            messagingSenderId: "740688157010",
+            appId: "1:740688157010:web:ce56f965bbebf3fea5428b",
+            measurementId: "G-HWCCCX2XF2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- All DOM elements ---
+        const allDOM = {
+            quizContainer: document.getElementById('quiz-container'),
+            form: document.getElementById('quiz-form'),
+            resultsContainer: document.getElementById('results'),
+            scoreEl: document.getElementById('score'),
+            summaryEl: document.getElementById('summary'),
+            downloadBtn: document.getElementById('download-btn'),
+            retryBtn: document.getElementById('retry-btn'),
+            studentInfoContainer: document.getElementById('student-info'),
+            dbStatusEl: document.getElementById('db-status'),
+            teacherLoginBtn: document.getElementById('teacher-login-btn'),
+            teacherPanel: document.getElementById('teacher-panel'),
+            resultsTableBody: document.getElementById('results-table-body'),
+            submitBtn: document.getElementById('submit-btn'),
+            exportCsvBtn: document.getElementById('export-csv-btn'),
+            passwordModal: document.getElementById('password-modal'),
+            passwordInput: document.getElementById('password-input'),
+            passwordSubmitBtn: document.getElementById('password-submit-btn'),
+            passwordCancelBtn: document.getElementById('password-cancel-btn'),
+        };
+
+        const quizData = [
+            { question: "1. 「$83 \\div \\Box = 11 \\cdots 6$」，請問 $\\Box$ 內要填入哪個數？", options: ["5", "7", "8", "9"], answer: 2 },
+            { question: "2. 百貨公司舉辦滿額集點送贈品活動，只要消費滿1600元，就可以累積1點，集滿200點，就可以兌換一臺微波爐。如果想要透過滿額集點兌換到一臺微波爐，最少需要在百貨公司消費多少元？", options: ["3200", "32000", "320000", "3200000"], answer: 3 },
+            { question: "3. 糖果工廠一天生產24000顆糖果，每60顆糖果裝一包，每4包糖果裝一箱。請問糖果工廠一天生產多少箱糖果？", options: ["5760000", "1600", "1000", "100"], answer: 4 },
+            { question: '4. 如圖，平行四邊形上、下兩邊的長都是8公分，左、右兩邊的長都是6公分。將左圖中的平行四邊形，沿著其中一條對角線剪開，剪開後得到右圖中兩個全等的三角形。<br><img src="https://meee.com.tw/tMNUzGe.png" alt="平行四邊形分割圖" class="quiz-image"><br>請問下面敘述何者正確？', options: ['AB邊和DE邊的長度相等', 'BC邊的對應邊是FE邊', '∠B和∠F的角度相等', '∠C的對應角是∠E'], answer: 3 },
+            { question: '5. 爸爸的年終獎金是12萬5300元，年終獎金和2月份的薪水，合起來是19萬700元，爸爸2月份的薪水是多少元？', options: ['6萬5400元', '7萬4600元', '7萬4700元', '7萬5400元'], answer: 1 },
+            { question: '6. 下圖是 1 條緞帶，平分成9段後的1段是 $\\frac{2}{5}$ 公尺。請問這條緞帶長多少公尺？<br><img src="https://meee.com.tw/PnXT2i4.png" alt="緞帶圖" class="quiz-image">', options: ["$\\frac{2}{45}$", "$\\frac{18}{45}$", "$3\\frac{3}{5}$", "$9\\frac{2}{5}$"], answer: 3 },
+            { question: '7. 下圖是歡樂國小各年級報名校內課後社團的人數長條圖。<br><img src="https://meee.com.tw/ZLWgd73.png" alt="人數長條圖" class="quiz-image"><br>請問下列敘述何者正確？', options: ['上圖可以知道報名總人數，但是看不到男女生人數', '低年級(一、二年級)報名總人數超過80人', '高年級(五、六年級)報名總人數比中年級(三、四年級)多', '低年級(一、二年級)報名總人數的2倍和全校報名總人數一樣多'], answer: 1 },
+            { question: "8. 「小明有120顆糖果，留下45顆後，把剩下的糖果平分給5位朋友。請問每位朋友可以分到多少顆糖果？」下面哪個算式和答案都正確？", options: ["$120-45\\div5=75\\div5=15$，答:15顆", "$120-45\\div5=120-9=111$，答:111顆", "$(120-45)\\div5=75\\div5=15$，答:15顆", "$(120-45)\\div5=120-9=111$，答:111 顆"], answer: 3 },
+            { question: '9. 關於下面圖形中兩條直線平行或垂直關係的敘述，何者錯誤？<br><img src="https://meee.com.tw/wu9uv1x.png" alt="直線關係圖" class="quiz-image">', options: ['甲、丁兩條直線平行', '乙、丙兩條直線平行', '甲、戊兩條直線垂直', '丁、己兩條直線垂直'], answer: 3 },
+            { question: "10. 下面是甲和乙兩位老師描述四邊形ㄅ的說法：<br>甲說：四邊形ㄅ的4個邊一樣長。<br>乙說：四邊形ㄅ的四個角都不是直角。<br>請問四邊形ㄅ是哪一種四邊形？", options: ["正方形", "長方形", "梯形", "菱形"], answer: 4 },
+            { question: "11. 下列哪個算式正確？", options: ["$109-50+10=109-60=49$", "$60\\times(20-5)=60\\times15=900$", "$45 \\div 5 \\times 3 = 45 \\div 15 = 3$", "$50+28\\div2=78\\div2=39$"], answer: 2 },
+            { question: '12. 如圖，A線在量角器外圈刻度60的位置。老師將A線做三次旋轉。第一次順時針旋轉40度，第二次逆時針旋轉80度，第三次順時針旋轉20度。請問A線最後在量角器上外圈什麼刻度的位置？<br><img src="https://meee.com.tw/IsphTzM.png" alt="量角器圖" class="quiz-image">', options: ['40', '60', '100', '120'], answer: 1 },
+            { question: '13. 下面是開心國小統計圖書館三種書籍類別借書量的統計表。請依據統計表，選出正確的敘述？<br><img src="https://meee.com.tw/L9wpmRd.png" alt="借書量統計表" class="quiz-image">', options: ['低年級借書量最多的是文學類', '從科學類書籍的借書量來看，借書量最多的是高年級', '低、中、高年級當中，借書量最多的是高年級', '三種書籍類別中，全校學生借書量最多的是科學類'], answer: 4 },
+            { question: '14. 下面是兩個長方形疊合所成的圖形。請問塗色部分的面積是多少平方公分？<br><img src="https://meee.com.tw/S8YOKRk.png" alt="疊合長方形圖" class="quiz-image">', options: ['768', '668', '568', '384'], answer: 2 },
+            { question: '15. 布告欄是長3.25公尺，寬2.8公尺的長方形。請問布告欄的周長是多少公尺？', options: ['3.53', '6.05', '7.06', '12.1'], answer: 4 },
+            { question: '16. 下圖是一條數線，( )內要填入哪個數？<br><img src="https://meee.com.tw/KT9ey4q.png" alt="數線圖" class="quiz-image">', options: ["0.3", "$\\frac{3}{5}$", "$\\frac{3}{9}$", "$\\frac{4}{6}$"], answer: 2 },
+            { question: '17. 如圖，圖一是安安晚上就寢的時刻，圖二是安安早上起床的時刻。請問安安睡了多久？<br><div class="flex justify-center items-center gap-4"><figure><img src="https://meee.com.tw/jIvNmmG.png" alt="時鐘圖一" class="quiz-image w-48"><figcaption class="text-center text-sm">圖一</figcaption></figure><figure><img src="https://meee.com.tw/L9wpmRd.png" alt="時鐘圖二" class="quiz-image w-48"><figcaption class="text-center text-sm">圖二</figcaption></figure></div>', options: ['6 小時', '7小時30 分鐘', '8小時', '8小時30 分鐘'], answer: 2 },
+            { question: '18. 下面有關面積大小的敘述，哪一個最不合理？', options: ['一張100元紙鈔的面積大約是100平方公分', '數學課本封面的面積大約是500平方公分', '一張色紙的面積大約是100平方公分', '一條手帕的面積大約是4平方公分'], answer: 4 },
+            { question: '19. 爸爸開車載四兄弟往嘉義的路上，看到下面的交通標誌。<br><img src="https://meee.com.tw/3dkFGBV.png" alt="交通標誌圖" class="quiz-image"><br>大毛說：還要3100公尺就到嘉義。<br>二毛說：還要18公里就到大林。<br>三毛說：還要500公尺就到斗南。<br>四毛說：還要5000公尺就到斗南。<br>請問哪兩個人的說法正確？', options: ['大毛和二毛', '大毛和四毛', '二毛和三毛', '二毛和四毛'], answer: 4 },
+            { question: '20. 從10時10分到10時45分，分針旋轉了多少度？<br><img src="https://meee.com.tw/ihpHpJf.png" alt="時鐘圖" class="quiz-image">', options: ['210', '180', '70', '35'], answer: 1 },
+            { question: '21. 下面是甲和乙兩人關於三角形的說法。<br>甲說：有兩個銳角的三角形一定是銳角三角形。<br>乙說：等腰直角三角形中有兩個一樣大的銳角。<br>請問哪些人的說法正確？', options: ['只有甲正確', '只有乙正確', '甲、乙都正確', '甲、乙都不正確'], answer: 2 },
+            { question: '22. 將1片百格板平分成100份，其中的1份是1格。將1條橘色積木平分成10份，其中的1份也是1格。<br>甲說：0.99片百格板和1格合起來，和1片百格板一樣多。<br>乙說：1 條橘色積木和1格合起來，和0.11片百格板一樣多。<br>請問哪些人的說法正確？', options: ['只有甲正確', '只有乙正確', '甲和乙都正確', '甲和乙都不正確'], answer: 3 },
+            { question: '23. 電梯的安全載重量是629公斤...我們習慣在電梯中標示限重600公斤。已知A 電梯的安全載重量是790公斤，B 電梯的安全載重量是709公斤。請問誰的說法合理？', options: ['甲', '乙', '丙', '丁'], answer: 3 },
+            { question: '24. 一箱飲料有24瓶...小玉買了 $\\frac{5}{3}$ 箱，小丸子買了 $\\frac{11}{6}$ 箱，花輪買了38瓶。請問誰買的飲料最多？誰買的飲料最少？', options: ['小丸子買的飲料最多，小玉買的飲料最少', '小丸子買的飲料最多，花輪買的飲料最少', '花輪買的飲料最多，小玉買的飲料最少', '小玉買的飲料最多，花輪買的飲料最少'], answer: 2 },
+            { question: '25. 「$600000\\div700$」的商是甲，餘數是a。「$6000\\div70$」的商是乙，餘數是b。「$6000\\div7$」的商是丙，餘數是c。下列關於商和餘數的敘述，何者正確？', options: ['商都一樣大，餘數最大的是a', '商都一樣大，餘數也都一樣大', '商最大的是甲，餘數最大的是 a', '商最小的是丙，餘數最小的是c'], answer: 1 },
+        ];
+        
+        let userAnswers = {};
+        let questionElements = [];
+
+        // --- UI Creation Functions ---
+        function createQuestionElement(item, index) {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'bg-white p-6 rounded-xl shadow-md question-group';
+            questionDiv.id = `question-${index}`;
+            
+            let content = `<p class="text-lg font-semibold mb-4">${item.question}</p>`;
+
+            content += `<div class="space-y-2 mt-4">`;
+            item.options.forEach((option, i) => {
+                const optionIndex = i + 1;
+                content += `
+                    <div class="flex items-center">
+                        <input type="radio" id="q${index}_o${optionIndex}" name="question${index}" value="${optionIndex}" class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                        <label for="q${index}_o${optionIndex}" class="ml-3 block text-gray-700 p-2 rounded-md border border-transparent w-full">${option}</label>
+                    </div>
+                `;
+            });
+            content += `</div>`;
+
+            questionDiv.innerHTML = content;
+            allDOM.quizContainer.appendChild(questionDiv);
+        }
+
+        // --- Event Handlers & Logic ---
+        async function submitQuiz(e) {
+            e.preventDefault();
+
+            const studentClass = document.getElementById('student-class').value.trim();
+            const studentName = document.getElementById('student-name').value.trim();
+
+            if (!studentClass || !studentName) {
+                alert('請先填寫班級和姓名！');
+                return;
+            }
+
+            allDOM.submitBtn.disabled = true;
+            allDOM.submitBtn.textContent = '計算中...';
+
+            let score = 0;
+            userAnswers = {};
+
+            questionElements.forEach((item, index) => {
+                const selectedOption = allDOM.form.querySelector(`input[name="question${index}"]:checked`);
+                const questionGroup = document.getElementById(`question-${index}`);
+
+                if (selectedOption) {
+                    const answer = parseInt(selectedOption.value);
+                    userAnswers[index+1] = answer;
+                    if (answer === item.answer) {
+                        score++;
+                        questionGroup.classList.add('correct');
+                    } else {
+                        questionGroup.classList.add('incorrect');
+                    }
+                } else {
+                    userAnswers[index+1] = '未作答';
+                    questionGroup.classList.add('incorrect');
+                }
+            });
+
+            const totalQuestions = questionElements.length;
+            const finalScore = Math.round((score / totalQuestions) * 100);
+
+            allDOM.dbStatusEl.textContent = '正在儲存作答紀錄...';
+            try {
+                await addDoc(collection(db, "results_grade_4_math"), {
+                    studentClass: studentClass,
+                    studentName: studentName,
+                    score: finalScore,
+                    correctCount: score,
+                    totalQuestions: totalQuestions,
+                    answers: userAnswers,
+                    timestamp: new Date()
+                });
+                allDOM.dbStatusEl.textContent = '作答紀錄已成功儲存！';
+                allDOM.dbStatusEl.style.color = 'green';
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                allDOM.dbStatusEl.textContent = '作答紀錄儲存失敗，請檢查網路連線或Firebase設定。';
+                allDOM.dbStatusEl.style.color = 'red';
+            }
+
+            allDOM.scoreEl.textContent = `${finalScore} 分`;
+            allDOM.summaryEl.textContent = `答對 ${score} 題，共 ${totalQuestions} 題。`;
+
+            allDOM.studentInfoContainer.classList.add('hidden');
+            allDOM.form.classList.add('hidden');
+            allDOM.resultsContainer.classList.remove('hidden');
+            
+            allDOM.resultsContainer.scrollIntoView({ behavior: 'smooth' });
+        };
+
+        function generateReportPage() {
+             const studentClass = document.getElementById('student-class').value.trim();
+            const studentName = document.getElementById('student-name').value.trim();
+            
+            let incorrectQuestionsHTML = '';
+            let questionCounter = 0;
+            questionElements.forEach((item, index) => {
+                questionCounter++;
+                const userAnswerKey = index + 1;
+                const userAnswer = userAnswers[userAnswerKey];
+                if (userAnswer !== item.answer) {
+                    const questionText = item.question.replace(/<br>/g, '\n').replace(/<img[^>]*>/g, '[圖片]').replace(/^\d+\.\s*/, '');
+                    const userAnswerText = (userAnswer !== '未作答' && userAnswer) ? item.options[userAnswer - 1] : '未作答';
+                    incorrectQuestionsHTML += `
+                        <div style="margin-bottom: 1.5rem; padding-left: 1rem; border-left: 3px solid #ef4444;">
+                            <p style="margin-bottom: 0.5rem;"><strong>第 ${questionCounter} 題:</strong> ${questionText}</p>
+                            <p>你的答案: (${userAnswer}) ${userAnswerText}</p>
+                        </div>`;
+                }
+            });
+
+            const reportHTML = `
+                <html>
+                <head><title>測驗結果報告</title><style>body { font-family: 'Noto Sans TC', sans-serif; padding: 2rem; } h1, h2 { text-align: center; } .info, .score-summary { border-bottom: 2px solid #ccc; padding-bottom: 1rem; margin-bottom: 1rem; }</style></head>
+                <body>
+                    <h1>四年級數學科 測驗報告</h1>
+                    <div class="info"><p><strong>班級:</strong> ${studentClass}</p><p><strong>姓名:</strong> ${studentName}</p></div>
+                    <div class="score-summary"><h2>總成績: ${allDOM.scoreEl.textContent}</h2><p>${allDOM.summaryEl.textContent}</p></div>
+                    <div><h3>錯誤題目列表</h3>${incorrectQuestionsHTML || '<p>恭喜你，全部答對了！</p>'}</div>
+                </body>
+                </html>`;
+            
+            const reportWindow = window.open('', '_blank');
+            reportWindow.document.write(reportHTML);
+            reportWindow.document.close();
+        };
+
+        function retryQuiz() {
+            allDOM.studentInfoContainer.classList.remove('hidden');
+            allDOM.form.classList.remove('hidden');
+            allDOM.resultsContainer.classList.add('hidden');
+            allDOM.form.reset();
+            allDOM.submitBtn.disabled = false;
+            allDOM.submitBtn.textContent = '送出測驗';
+            
+            document.querySelectorAll('.question-group').forEach(group => {
+                group.classList.remove('correct', 'incorrect');
+            });
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        async function showTeacherPanel() {
+            allDOM.teacherPanel.style.display = 'block';
+            allDOM.teacherPanel.scrollIntoView({ behavior: 'smooth' });
+            
+            allDOM.resultsTableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4">正在載入紀錄...</td></tr>';
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, "results_grade_4_math"));
+                allDOM.resultsTableBody.innerHTML = '';
+                
+                if (querySnapshot.empty) {
+                    allDOM.resultsTableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4">目前沒有任何作答紀錄。</td></tr>';
+                    return;
+                }
+
+                const records = [];
+                querySnapshot.forEach((doc) => {
+                    records.push(doc.data());
+                });
+                
+                records.sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+
+                records.forEach(data => {
+                    const date = data.timestamp.toDate();
+                    const formattedDate = `${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${date.getDate().toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+                    
+                    const row = `<tr>
+                        <td class="px-6 py-4 whitespace-nowrap">${formattedDate}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${data.studentClass}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${data.studentName}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${data.score}</td>
+                    </tr>`;
+                    allDOM.resultsTableBody.innerHTML += row;
+                });
+
+            } catch (error) {
+                console.error("Error getting documents: ", error);
+                allDOM.resultsTableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-red-500">讀取紀錄失敗，請檢查網路連線或Firebase設定。</td></tr>';
+            }
+        };
+        
+        const handleLogin = function() {
+            const correctPassword = "pingking1@";
+            const enteredPassword = allDOM.passwordInput.value;
+
+            if (enteredPassword === correctPassword) {
+                allDOM.passwordModal.style.display = 'none';
+                allDOM.passwordInput.value = '';
+                showTeacherPanel();
+            } else {
+                alert("密碼錯誤！");
+                allDOM.passwordInput.value = '';
+            }
+        };
+
+        async function exportToCsv() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "results_grade_4_math"));
+                if (querySnapshot.empty) {
+                    alert("目前沒有任何作答紀錄可匯出。");
+                    return;
+                }
+
+                const records = [];
+                querySnapshot.forEach((doc) => {
+                    records.push(doc.data());
+                });
+                
+                records.sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+
+                let csvContent = "";
+                const headers = ["作答時間", "班級", "姓名", "分數", "答對題數"];
+                const totalQuestions = questionElements.length;
+                for (let i = 1; i <= totalQuestions; i++) {
+                    headers.push(`第${i}題答案`);
+                }
+                csvContent += headers.join(',') + '\r\n';
+
+                records.forEach(record => {
+                    const date = record.timestamp.toDate();
+                    const formattedDate = `${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${date.getDate().toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+                    
+                    let row = [
+                        `"${formattedDate}"`,
+                        `"${record.studentClass}"`,
+                        `"${record.studentName}"`,
+                        record.score,
+                        record.correctCount
+                    ];
+
+                    for (let i = 1; i <= totalQuestions; i++) {
+                        row.push(record.answers[i] || "未作答");
+                    }
+                    csvContent += row.join(',') + '\r\n';
+                });
+
+                const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); 
+                const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                if (link.download !== undefined) { 
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", "四年級數學作答紀錄.csv");
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+
+            } catch (error) {
+                console.error("無法匯出CSV: ", error);
+                alert("匯出紀錄失敗，請檢查Firebase設定與網路連線。");
+            }
+        };
+        
+        // --- Initialization ---
+        function initializeQuiz() {
+            quizData.forEach((item, index) => {
+                if(item.question) questionElements.push(item);
+                createQuestionElement(item, index);
+            });
+            
+            if (window.MathJax && window.MathJax.typeset) {
+                window.MathJax.typeset();
+            }
+
+            // Add event listeners
+            allDOM.form.addEventListener('submit', submitQuiz);
+            allDOM.retryBtn.addEventListener('click', retryQuiz);
+            allDOM.downloadBtn.addEventListener('click', generateReportPage);
+            allDOM.teacherLoginBtn.addEventListener('click', () => {
+                allDOM.passwordModal.style.display = 'flex';
+                allDOM.passwordInput.focus();
+            });
+            allDOM.passwordCancelBtn.addEventListener('click', () => {
+                allDOM.passwordModal.style.display = 'none';
+                allDOM.passwordInput.value = '';
+            });
+            allDOM.passwordSubmitBtn.addEventListener('click', handleLogin);
+            allDOM.passwordInput.addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') handleLogin();
+            });
+            allDOM.exportCsvBtn.addEventListener('click', exportToCsv);
+        }
+        
+        initializeQuiz();
+    </script>
+</body>
+</html>
