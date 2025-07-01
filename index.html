@@ -179,11 +179,11 @@
             { question: "10. 下面是甲和乙兩位老師描述四邊形ㄅ的說法：<br>甲說：四邊形ㄅ的4個邊一樣長。<br>乙說：四邊形ㄅ的四個角都不是直角。<br>請問四邊形ㄅ是哪一種四邊形？", options: ["正方形", "長方形", "梯形", "菱形"], answer: 4 },
             { question: "11. 下列哪個算式正確？", options: ["$109-50+10=109-60=49$", "$60\\times(20-5)=60\\times15=900$", "$45 \\div 5 \\times 3 = 45 \\div 15 = 3$", "$50+28\\div2=78\\div2=39$"], answer: 2 },
             { question: '12. 如圖，A線在量角器外圈刻度60的位置。老師將A線做三次旋轉。第一次順時針旋轉40度，第二次逆時針旋轉80度，第三次順時針旋轉20度。請問A線最後在量角器上外圈什麼刻度的位置？<br><img src="https://meee.com.tw/IsphTzM.png" alt="量角器圖" class="quiz-image">', options: ['40', '60', '100', '120'], answer: 1 },
-            { question: '13. 下面是開心國小統計圖書館三種書籍類別借書量的統計表。請依據統計表，選出正確的敘述？<br><img src="https://meee.com.tw/L9wpmRd.png" alt="借書量統計表" class="quiz-image">', options: ['低年級借書量最多的是文學類', '從科學類書籍的借書量來看，借書量最多的是高年級', '低、中、高年級當中，借書量最多的是高年級', '三種書籍類別中，全校學生借書量最多的是科學類'], answer: 4 },
+            { question: "13. 下面是開心國小統計圖書館三種書籍類別借書量的統計表。請依據統計表，選出正確的敘述？", table: { headers: ["類別 年級", "科學類", "文學類", "繪本類", "合計(本)"], rows: [["低年級", "13", "?", "78", "106"], ["中年級", "89", "43", "57", "?"], ["高年級", "68", "53", "34", "155"], ["合計(本)", "?", "111", "169", "450"]] }, options: ["低年級借書量最多的是文學類", "從科學類書籍的借書量來看，借書量最多的是高年級", "低、中、高年級當中，借書量最多的是高年級", "三種書籍類別中，全校學生借書量最多的是科學類"], answer: 4 },
             { question: '14. 下面是兩個長方形疊合所成的圖形。請問塗色部分的面積是多少平方公分？<br><img src="https://meee.com.tw/S8YOKRk.png" alt="疊合長方形圖" class="quiz-image">', options: ['768', '668', '568', '384'], answer: 2 },
             { question: '15. 布告欄是長3.25公尺，寬2.8公尺的長方形。請問布告欄的周長是多少公尺？', options: ['3.53', '6.05', '7.06', '12.1'], answer: 4 },
             { question: '16. 下圖是一條數線，( )內要填入哪個數？<br><img src="https://meee.com.tw/KT9ey4q.png" alt="數線圖" class="quiz-image">', options: ["0.3", "$\\frac{3}{5}$", "$\\frac{3}{9}$", "$\\frac{4}{6}$"], answer: 2 },
-            { question: '17. 如圖，圖一是安安晚上就寢的時刻，圖二是安安早上起床的時刻。請問安安睡了多久？<br><div class="flex justify-center items-center gap-4"><figure><img src="https://meee.com.tw/jIvNmmG.png" alt="時鐘圖一" class="quiz-image w-48"><figcaption class="text-center text-sm">圖一</figcaption></figure><figure><img src="https://meee.com.tw/L9wpmRd.png" alt="時鐘圖二" class="quiz-image w-48"><figcaption class="text-center text-sm">圖二</figcaption></figure></div>', options: ['6 小時', '7小時30 分鐘', '8小時', '8小時30 分鐘'], answer: 2 },
+            { question: '17. 如圖，圖一是安安晚上就寢的時刻，圖二是安安早上起床的時刻。請問安安睡了多久？<br><img src="https://meee.com.tw/sFQLOIG.png" alt="時鐘圖" class="quiz-image">', options: ['6 小時', '7小時30 分鐘', '8小時', '8小時30 分鐘'], answer: 2 },
             { question: '18. 下面有關面積大小的敘述，哪一個最不合理？', options: ['一張100元紙鈔的面積大約是100平方公分', '數學課本封面的面積大約是500平方公分', '一張色紙的面積大約是100平方公分', '一條手帕的面積大約是4平方公分'], answer: 4 },
             { question: '19. 爸爸開車載四兄弟往嘉義的路上，看到下面的交通標誌。<br><img src="https://meee.com.tw/3dkFGBV.png" alt="交通標誌圖" class="quiz-image"><br>大毛說：還要3100公尺就到嘉義。<br>二毛說：還要18公里就到大林。<br>三毛說：還要500公尺就到斗南。<br>四毛說：還要5000公尺就到斗南。<br>請問哪兩個人的說法正確？', options: ['大毛和二毛', '大毛和四毛', '二毛和三毛', '二毛和四毛'], answer: 4 },
             { question: '20. 從10時10分到10時45分，分針旋轉了多少度？<br><img src="https://meee.com.tw/ihpHpJf.png" alt="時鐘圖" class="quiz-image">', options: ['210', '180', '70', '35'], answer: 1 },
@@ -204,6 +204,25 @@
             questionDiv.id = `question-${index}`;
             
             let content = `<p class="text-lg font-semibold mb-4">${item.question}</p>`;
+            
+            if (item.table) {
+                let tableHtml = `<div class="my-4 overflow-x-auto"><table class="w-full text-sm text-left text-gray-500 border-collapse border border-slate-400">`;
+                tableHtml += `<thead><tr>`;
+                item.table.headers.forEach(header => {
+                    tableHtml += `<th class="border border-slate-300 p-2 bg-slate-100">${header}</th>`;
+                });
+                tableHtml += `</tr></thead><tbody>`;
+                item.table.rows.forEach(row => {
+                    tableHtml += `<tr>`;
+                    row.forEach(cell => {
+                        tableHtml += `<td class="border border-slate-300 p-2">${cell}</td>`;
+                    });
+                    tableHtml += `</tr>`;
+                });
+                tableHtml += `</tbody></table></div>`;
+                content = content.replace("<br>", tableHtml); 
+            }
+
 
             content += `<div class="space-y-2 mt-4">`;
             item.options.forEach((option, i) => {
@@ -301,7 +320,7 @@
                 const userAnswerKey = index + 1;
                 const userAnswer = userAnswers[userAnswerKey];
                 if (userAnswer !== item.answer) {
-                    const questionText = item.question.replace(/<br>/g, '\n').replace(/<img[^>]*>/g, '[圖片]').replace(/^\d+\.\s*/, '');
+                    const questionText = item.question.replace(/<br>/g, '\n').replace(/<img[^>]*>/g, '[圖片]').replace(/<div[^>]*>.*<\/div>/g, '[表格]').replace(/^\d+\.\s*/, '');
                     const userAnswerText = (userAnswer !== '未作答' && userAnswer) ? item.options[userAnswer - 1] : '未作答';
                     incorrectQuestionsHTML += `
                         <div style="margin-bottom: 1.5rem; padding-left: 1rem; border-left: 3px solid #ef4444;">
